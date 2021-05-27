@@ -28,10 +28,23 @@ var ErrCouldNotUnmarshalEvent = errors.New("could not unmarshal event")
 // ErrCouldNotSaveAggregate is when an aggregate could not be saved.
 var ErrCouldNotSaveAggregate = errors.New("could not save aggregate")
 
+// Option is an option setter used to configure creation.
+type Option func(*EventStore) error
+
+// WithEventHandler adds an event handler that will be called when saving events.
+// An example would be to add an event bus to publish events.
+func WithEventHandler(h eh.EventHandler) Option {
+	return func(s *EventStore) error {
+		s.eventHandler = h
+		return nil
+	}
+}
+
 // EventStore implements an eh.EventStore for PostgreSQL.
 type EventStore struct {
-	db      *pg.DB
-	encoder Encoder
+	db           *pg.DB
+	encoder      Encoder
+	eventHandler eh.EventHandler
 }
 
 var _ = eh.EventStore(&EventStore{})
@@ -91,11 +104,18 @@ func (s *EventStore) newDBEvent(ctx context.Context, event eh.Event) (*Aggregate
 }
 
 // NewEventStore creates a new EventStore.
-func NewEventStore(db *pg.DB) (*EventStore, error) {
+func NewEventStore(db *pg.DB, options ...Option) (*EventStore, error) {
 	s := &EventStore{
 		db:      db,
 		encoder: &jsonEncoder{},
 	}
+
+	for _, option := range options {
+		if err := option(s); err != nil {
+			return nil, fmt.Errorf("error while applying option: %w", err)
+		}
+	}
+
 	err := s.CreateTables(&orm.CreateTableOptions{
 		IfNotExists: true,
 	})
@@ -199,6 +219,19 @@ func (s *EventStore) Save(ctx context.Context, events []eh.Event, originalVersio
 			BaseErr:   err,
 			Err:       ErrCouldNotSaveAggregate,
 			Namespace: ns,
+		}
+	}
+
+	// Let the optional event handler handle the events.
+	if s.eventHandler != nil {
+		for _, e := range events {
+			if err := s.eventHandler.HandleEvent(ctx, e); err != nil {
+				return eh.CouldNotHandleEventError{
+					Err:       err,
+					Event:     e,
+					Namespace: eh.NamespaceFromContext(ctx),
+				}
+			}
 		}
 	}
 
