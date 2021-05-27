@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	ehpg "github.com/giautm/eh-pg"
+	ehpg "github.com/bluelabs-eu/eh-pg"
 	"github.com/go-pg/pg"
 	eh "github.com/looplab/eventhorizon"
 	testutil "github.com/looplab/eventhorizon/eventstore"
