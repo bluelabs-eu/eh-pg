@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/giautm/eh-pg"
+	ehpg "github.com/giautm/eh-pg"
 	"github.com/go-pg/pg"
 	eh "github.com/looplab/eventhorizon"
 	testutil "github.com/looplab/eventhorizon/eventstore"
@@ -46,6 +46,6 @@ func TestEventStore(t *testing.T) {
 	t.Log("event store with other namespace")
 	testutil.AcceptanceTest(t, ctx, store)
 
-	t.Log("event store maintainer")
-	testutil.MaintainerAcceptanceTest(t, context.Background(), store)
+	// t.Log("event store maintainer")
+	// testutil.MaintainerAcceptanceTest(t, context.Background(), store)
 }

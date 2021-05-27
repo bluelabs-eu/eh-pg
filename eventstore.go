@@ -55,6 +55,7 @@ type AggregateEvent struct {
 	RawData       json.RawMessage        `sql:"data,type:jsonb"`
 	Timestamp     time.Time              `sql:"timestamp"`
 	Version       int                    `sql:"version"`
+	Metadata      map[string]interface{} `sql:"metadata"`
 	Context       map[string]interface{} `sql:"context"`
 	data          eh.EventData           `sql:"-"`
 }
@@ -380,6 +381,11 @@ func (e event) Version() int {
 // Timestamp implements the Timestamp method of the eventhorizon.Event interface.
 func (e event) Timestamp() time.Time {
 	return e.AggregateEvent.Timestamp
+}
+
+// Metadata implements the Metadata method of the eventhorizon.Event interface.
+func (e event) Metadata() map[string]interface{} {
+	return e.AggregateEvent.Metadata
 }
 
 // String implements the String method of the eventhorizon.Event interface.
